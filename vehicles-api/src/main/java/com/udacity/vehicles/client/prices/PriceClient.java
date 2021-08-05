@@ -2,6 +2,7 @@ package com.udacity.vehicles.client.prices;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -13,10 +14,13 @@ public class PriceClient {
 
     private static final Logger log = LoggerFactory.getLogger(PriceClient.class);
 
-    private final WebClient client;
+    private final WebClient.Builder builder;
 
-    public PriceClient(WebClient pricing) {
-        this.client = pricing;
+    @Value("${pricing.endpoint}")
+    String endpoint;
+
+    public PriceClient(WebClient.Builder builder) {
+        this.builder = builder;
     }
 
     // In a real-world application we'll want to add some resilience
@@ -32,6 +36,7 @@ public class PriceClient {
      */
     public String getPrice(Long vehicleId) {
         try {
+            WebClient client = builder.baseUrl(endpoint).build();
             Price price = client
                     .get()
                     .uri(uriBuilder -> uriBuilder
