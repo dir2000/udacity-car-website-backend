@@ -3,6 +3,7 @@ package com.udacity.pricing;
 import static org.junit.Assert.*;
 
 import com.udacity.pricing.domain.price.Price;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,18 +26,20 @@ public class PricingServiceApplicationTests {
 
     @Autowired
     private TestRestTemplate restTemplate;
+	private String testCurrency = "USD";
+	private BigDecimal testPrice = BigDecimal.valueOf(12000);
 
-    @Test
+	@Test
     public void getAllPrices() {
         ResponseEntity<Map> response = restTemplate.getForEntity(getUrl(), Map.class);
-        assertEquals(response.getStatusCode(), HttpStatus.OK);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
     @Test
     public void createPrice() {
 		Price price = insertPrice(1L);
 		assertNotNull(price);
-        assertEquals(price.getCurrency(), "USD");
+		assertEquals(testCurrency, price.getCurrency());
     }
 
 	@Test
@@ -47,16 +50,15 @@ public class PricingServiceApplicationTests {
 		ResponseEntity<Price> response = restTemplate.getForEntity(resourceUrl, Price.class);
 		Price readPrice = response.getBody();
 
-		assertEquals(response.getStatusCode(), HttpStatus.OK);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertNotNull(readPrice);
-		long readVehicleId = readPrice.getVehicleId();
-		assertEquals(readVehicleId, vehicleId);
+		assertEquals(testPrice.compareTo(readPrice.getPrice()), 0);
 	}
 
 	@Test
 	public void updatePrice() {
 		long vehicleId = 3L;
-		Price price = insertPrice(vehicleId);
+		insertPrice(vehicleId);
 
 		// Update Resource
 		String newCurrency = "EUR";
@@ -71,12 +73,21 @@ public class PricingServiceApplicationTests {
 		assertEquals(updatedPrice.getCurrency(), newCurrency);
 	}
 
+	@Test
+	public void deletePrice() {
+		long vehicleId = 4L;
+		insertPrice(vehicleId);
+		String resourceUrl = getUrl() + '/' + vehicleId;
+		restTemplate.delete(resourceUrl);
+	}
+
 	private String getUrl() {
 		return "http://localhost:" + port + "/prices";
 	}
 
 	private Price insertPrice(Long vehicleId) {
-		HttpEntity<Price> request = new HttpEntity<>(new Price(vehicleId, "USD", BigDecimal.valueOf(12000)));
+		testPrice = BigDecimal.valueOf(12000);
+		HttpEntity<Price> request = new HttpEntity<>(new Price(vehicleId, testCurrency, testPrice));
 		Price price = restTemplate.postForObject(getUrl(), request, Price.class);
 		return price;
 	}
